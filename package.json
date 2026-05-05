@@ -1,0 +1,18 @@
+{
+  "name": "karaoke-key",
+  "version": "0.1.0",
+  "description": "Real-time pitch shifting (key change) for any tab — built for karaoke.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "package": "pnpm build && cd dist && zip -r ../karaoke-key.zip . -x \"*.map\""
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "@crxjs/vite-plugin": "^2.0.0-beta.25",
+    "@types/chrome": "^0.0.268",
+    "typescript": "^5.4.5",
+    "vite": "^5.2.11"
+  }
+}

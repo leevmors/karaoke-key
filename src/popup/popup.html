@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=320,initial-scale=1" />
+    <title>Karaoke Key</title>
+    <link rel="stylesheet" href="./popup.css" />
+  </head>
+  <body>
+    <main class="card" aria-label="Karaoke Key controls">
+      <header class="brand">
+        <span class="logo" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="18" height="18">
+            <path
+              fill="currentColor"
+              d="M12 3v10.55A4 4 0 1 0 14 17V7h4V3z"
+            />
+          </svg>
+        </span>
+        <span class="title">Karaoke Key</span>
+        <span class="subtitle">find your key</span>
+      </header>
+
+      <section class="readout" id="readout">
+        <div class="readout-sign" id="sign">±</div>
+        <div class="readout-value" id="value">0</div>
+        <div class="readout-label" id="label">Original key</div>
+      </section>
+
+      <section class="controls">
+        <button id="down" class="key key-down" aria-label="Lower key">
+          <svg viewBox="0 0 24 24" width="22" height="22">
+            <path fill="currentColor" d="M5 11h14v2H5z" />
+          </svg>
+        </button>
+        <button id="reset" class="key key-reset" aria-label="Reset to original">
+          <svg viewBox="0 0 24 24" width="18" height="18">
+            <path
+              fill="currentColor"
+              d="M12 5V2L7 6l5 4V7a5 5 0 1 1-5 5H5a7 7 0 1 0 7-7z"
+            />
+          </svg>
+        </button>
+        <button id="up" class="key key-up" aria-label="Raise key">
+          <svg viewBox="0 0 24 24" width="22" height="22">
+            <path fill="currentColor" d="M11 5h2v14h-2z" />
+            <path fill="currentColor" d="M5 11h14v2H5z" />
+          </svg>
+        </button>
+      </section>
+
+      <footer class="hint" id="hint">
+        <kbd>Ctrl</kbd>
+        <kbd>↑</kbd>
+        <span class="dot">·</span>
+        <kbd>Ctrl</kbd>
+        <kbd>↓</kbd>
+        <span class="dot">·</span>
+        <kbd>Ctrl</kbd>
+        <kbd>0</kbd>
+      </footer>
+
+      <div class="toast" id="toast" hidden></div>
+    </main>
+    <script type="module" src="./popup.ts"></script>
+  </body>
+</html>
