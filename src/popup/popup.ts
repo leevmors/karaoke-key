@@ -88,50 +88,72 @@ function showToast(text: string): void {
 }
 
 async function findActiveTabId(): Promise<number | undefined> {
-  // Popup context has a real associated window; this is reliable.
-  const [tab] = await chrome.tabs.query({
-    active: true,
-    currentWindow: true,
-  });
-  return tab?.id;
+  // Try the popup's own window first; fall back to the last focused window
+  // (covers detached popup-window quirks), then any active normal-window tab.
+  try {
+    const [a] = await chrome.tabs.query({
+      active: true,
+      currentWindow: true,
+    });
+    if (a?.id != null) return a.id;
+  } catch {
+    /* fall through */
+  }
+  try {
+    const [b] = await chrome.tabs.query({
+      active: true,
+      lastFocusedWindow: true,
+    });
+    if (b?.id != null) return b.id;
+  } catch {
+    /* fall through */
+  }
+  try {
+    const all = await chrome.tabs.query({ active: true });
+    return all.find((t) => t.id != null && t.windowId != null)?.id;
+  } catch {
+    return undefined;
+  }
+}
+
+async function ensureTabId(): Promise<number | undefined> {
+  if (activeTabId != null) return activeTabId;
+  const id = await findActiveTabId();
+  if (id != null) activeTabId = id;
+  return activeTabId ?? undefined;
 }
 
 async function bootstrap(): Promise<void> {
+  // Bootstrap is best-effort. If anything fails here it's not user-actionable
+  // (SW cold-start race, transient API hiccup, etc.) - we just stay on the
+  // default 0 readout. The user's next click will resolve the tab lazily and
+  // drive the SW. Only the DRM warning is shown because that IS actionable.
+  const tabId = await ensureTabId();
+  if (tabId == null) return;
   try {
-    const tabId = await findActiveTabId();
-    if (tabId == null) {
-      showToast("No active tab.");
-      return;
-    }
-    activeTabId = tabId;
     const resp = await send({ type: "GET_STATE", tabId });
-    if (!resp.ok) {
-      showToast(resp.error ?? "Couldn't load state.");
-      return;
+    if (resp.ok && resp.state) {
+      render(resp.state.semitones ?? 0, false);
+      if (resp.state.drmDetected) {
+        showToast("This site uses DRM. Pitch shifting won't work here.");
+      }
     }
-    render(resp.state?.semitones ?? 0, false);
-    if (resp.state?.drmDetected) {
-      showToast("This site uses DRM. Pitch shifting won't work here.");
-    }
-  } catch (err) {
-    showToast(err instanceof Error ? err.message : "Could not load state.");
+  } catch {
+    /* silent - the popup will sync after the next user action */
   }
 }
 
 async function nudge(delta: number): Promise<void> {
-  if (activeTabId == null) return;
+  const tabId = await ensureTabId();
+  if (tabId == null) return;
   const target = clampSemitones(currentSemitones + delta);
   if (target === currentSemitones) return;
   render(target, true);
   try {
-    const resp = await send({
-      type: "PITCH_DELTA",
-      tabId: activeTabId,
-      delta,
-    });
+    const resp = await send({ type: "PITCH_DELTA", tabId, delta });
     if (!resp.ok) {
-      showToast(resp.error ?? "Couldn't adjust pitch on this tab.");
-      // revert visual on error
+      // Real, user-facing failure (e.g. tabCapture refused) - show it.
+      if (resp.error) showToast(resp.error);
       render(currentSemitones - delta, false);
       return;
     }
@@ -143,12 +165,13 @@ async function nudge(delta: number): Promise<void> {
 }
 
 async function reset(): Promise<void> {
-  if (activeTabId == null) return;
+  const tabId = await ensureTabId();
+  if (tabId == null) return;
   render(0, true);
   try {
-    await send({ type: "RESET_PITCH", tabId: activeTabId });
-  } catch (err) {
-    showToast(err instanceof Error ? err.message : "Reset failed.");
+    await send({ type: "RESET_PITCH", tabId });
+  } catch {
+    /* silent - reset is fire-and-forget */
   }
 }
 
