@@ -1,12 +1,18 @@
 export const MIN_SEMITONES = -12;
 export const MAX_SEMITONES = 12;
 
+export type Mode = "heavy" | "light";
+export const DEFAULT_MODE: Mode = "heavy";
+export const MODE_STORAGE_KEY = "pitchMode";
+
 export type PopupToBg =
   | { type: "GET_STATE"; tabId?: number }
   | { type: "SET_PITCH"; tabId: number; semitones: number }
   | { type: "PITCH_DELTA"; tabId: number; delta: number }
   | { type: "RESET_PITCH"; tabId: number }
-  | { type: "STOP"; tabId: number };
+  | { type: "STOP"; tabId: number }
+  | { type: "GET_MODE" }
+  | { type: "SET_MODE"; mode: Mode };
 
 export type BgToOffscreen =
   | {
@@ -14,9 +20,11 @@ export type BgToOffscreen =
       tabId: number;
       streamId: string;
       semitones: number;
+      mode: Mode;
     }
   | { type: "SET_PITCH"; tabId: number; semitones: number }
   | { type: "STOP_CAPTURE"; tabId: number }
+  | { type: "SET_MODE"; mode: Mode }
   | { type: "PROBE_DRM"; tabId: number };
 
 export type OffscreenToBg =

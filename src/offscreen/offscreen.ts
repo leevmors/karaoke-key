@@ -1,4 +1,4 @@
-import type { BgToOffscreen, OffscreenToBg } from "../shared/messages";
+import type { BgToOffscreen, Mode, OffscreenToBg } from "../shared/messages";
 
 interface TabGraph {
   tabId: number;
@@ -36,6 +36,7 @@ async function buildGraph(
   tabId: number,
   streamId: string,
   semitones: number,
+  mode: Mode,
 ): Promise<TabGraph> {
   const ctx = getContext();
   await ensureWorkletLoaded(ctx);
@@ -67,6 +68,7 @@ async function buildGraph(
   worklet.connect(gain);
   gain.connect(ctx.destination);
 
+  setMode(worklet, mode);
   setSemitones(worklet, semitones);
 
   const graph: TabGraph = { tabId, stream, source, worklet, gain };
@@ -76,6 +78,10 @@ async function buildGraph(
 
 function setSemitones(worklet: AudioWorkletNode, semitones: number): void {
   worklet.port.postMessage({ type: "set-pitch-semitones", value: semitones });
+}
+
+function setMode(worklet: AudioWorkletNode, mode: Mode): void {
+  worklet.port.postMessage({ type: "set-mode", value: mode });
 }
 
 function teardownGraph(graph: TabGraph): void {
@@ -157,6 +163,7 @@ chrome.runtime.onMessage.addListener(
               msg.tabId,
               msg.streamId,
               msg.semitones,
+              msg.mode,
             );
             graphs.set(msg.tabId, graph);
             const reply: OffscreenToBg = {
@@ -164,6 +171,14 @@ chrome.runtime.onMessage.addListener(
               tabId: msg.tabId,
             };
             chrome.runtime.sendMessage(reply).catch(() => undefined);
+            sendResponse({ ok: true });
+            return;
+          }
+          case "SET_MODE": {
+            // Apply to all live graphs.
+            for (const g of graphs.values()) {
+              setMode(g.worklet, msg.mode);
+            }
             sendResponse({ ok: true });
             return;
           }

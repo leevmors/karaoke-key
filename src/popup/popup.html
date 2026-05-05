@@ -50,14 +50,27 @@
       </section>
 
       <footer class="hint" id="hint">
-        <kbd>Ctrl</kbd>
-        <kbd>↑</kbd>
-        <span class="dot">·</span>
-        <kbd>Ctrl</kbd>
-        <kbd>↓</kbd>
-        <span class="dot">·</span>
-        <kbd>Ctrl</kbd>
-        <kbd>0</kbd>
+        <span class="hint-keys">
+          <kbd>Ctrl</kbd>
+          <kbd>↑</kbd>
+          <span class="dot">·</span>
+          <kbd>Ctrl</kbd>
+          <kbd>↓</kbd>
+          <span class="dot">·</span>
+          <kbd>Ctrl</kbd>
+          <kbd>0</kbd>
+        </span>
+        <button
+          id="mode-toggle"
+          class="mode-toggle"
+          type="button"
+          aria-label="Toggle quality mode"
+          data-mode="heavy"
+          title="Heavy: full stereo preservation. Lite: lower CPU."
+        >
+          <span class="mode-dot" aria-hidden="true"></span>
+          <span class="mode-label">HD</span>
+        </button>
       </footer>
 
       <div class="toast" id="toast" hidden></div>

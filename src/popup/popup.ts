@@ -1,6 +1,8 @@
 import {
+  type Mode,
   type PopupToBg,
   type TabState,
+  DEFAULT_MODE,
   clampSemitones,
 } from "../shared/messages";
 
@@ -8,6 +10,7 @@ interface BgResponse {
   ok: boolean;
   tabId?: number;
   state?: TabState;
+  mode?: Mode;
   error?: string;
 }
 
@@ -19,9 +22,16 @@ const upBtn = document.getElementById("up") as HTMLButtonElement;
 const downBtn = document.getElementById("down") as HTMLButtonElement;
 const resetBtn = document.getElementById("reset") as HTMLButtonElement;
 const toastEl = document.getElementById("toast") as HTMLDivElement;
+const modeToggleBtn = document.getElementById(
+  "mode-toggle",
+) as HTMLButtonElement;
+const modeLabelEl = modeToggleBtn.querySelector(
+  ".mode-label",
+) as HTMLSpanElement;
 
 let activeTabId: number | null = null;
 let currentSemitones = 0;
+let currentMode: Mode = DEFAULT_MODE;
 
 function send<R = BgResponse>(msg: PopupToBg): Promise<R> {
   return new Promise((resolve, reject) => {
@@ -123,7 +133,25 @@ async function ensureTabId(): Promise<number | undefined> {
   return activeTabId ?? undefined;
 }
 
+function renderMode(mode: Mode): void {
+  currentMode = mode;
+  modeToggleBtn.dataset.mode = mode;
+  modeLabelEl.textContent = mode === "heavy" ? "HD" : "Lite";
+  modeToggleBtn.title =
+    mode === "heavy"
+      ? "Heavy: full stereo preservation, slightly more CPU. Click to switch to Lite."
+      : "Lite: lower CPU, slight stereo bleed. Click to switch to HD.";
+}
+
 async function bootstrap(): Promise<void> {
+  // Mode is a global preference; load it independent of any tab.
+  try {
+    const r = await send({ type: "GET_MODE" });
+    if (r.ok && r.mode) renderMode(r.mode);
+  } catch {
+    /* silent */
+  }
+
   // Bootstrap is best-effort. If anything fails here it's not user-actionable
   // (SW cold-start race, transient API hiccup, etc.) - we just stay on the
   // default 0 readout. The user's next click will resolve the tab lazily and
@@ -140,6 +168,18 @@ async function bootstrap(): Promise<void> {
     }
   } catch {
     /* silent - the popup will sync after the next user action */
+  }
+}
+
+async function toggleMode(): Promise<void> {
+  const prev = currentMode;
+  const next: Mode = prev === "heavy" ? "light" : "heavy";
+  // Optimistic UI update.
+  renderMode(next);
+  try {
+    await send({ type: "SET_MODE", mode: next });
+  } catch {
+    renderMode(prev);
   }
 }
 
@@ -178,6 +218,7 @@ async function reset(): Promise<void> {
 upBtn.addEventListener("click", () => nudge(+1));
 downBtn.addEventListener("click", () => nudge(-1));
 resetBtn.addEventListener("click", reset);
+modeToggleBtn.addEventListener("click", () => void toggleMode());
 
 // In-popup keyboard shortcuts (work while popup is focused).
 window.addEventListener("keydown", (event) => {

@@ -244,11 +244,74 @@ body {
 .hint {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 4px;
+  justify-content: space-between;
+  gap: 8px;
   margin-top: 14px;
   font-size: 10.5px;
   color: var(--text-dim);
+}
+
+.hint-keys {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.mode-toggle {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 9px 4px 7px;
+  border-radius: 999px;
+  border: 1px solid var(--stroke-strong);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-dim);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition:
+    color 160ms ease,
+    background 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 120ms ease;
+}
+
+.mode-toggle:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.mode-toggle:active {
+  transform: scale(0.96);
+}
+
+.mode-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-dim);
+  transition:
+    background 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.mode-toggle[data-mode="heavy"] {
+  color: var(--text);
+  border-color: rgba(200, 181, 255, 0.5);
+  background: linear-gradient(
+    135deg,
+    rgba(110, 231, 255, 0.15),
+    rgba(255, 122, 182, 0.15)
+  );
+  box-shadow: 0 4px 16px rgba(200, 181, 255, 0.18);
+}
+
+.mode-toggle[data-mode="heavy"] .mode-dot {
+  background: linear-gradient(135deg, var(--accent-down), var(--accent-up));
+  box-shadow: 0 0 8px rgba(200, 181, 255, 0.6);
 }
 
 kbd {

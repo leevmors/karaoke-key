@@ -1,13 +1,26 @@
 import {
   type BgToOffscreen,
+  type Mode,
   type OffscreenToBg,
   type PopupToBg,
   type TabState,
+  DEFAULT_MODE,
+  MODE_STORAGE_KEY,
   STATE_PREFIX,
   clampSemitones,
 } from "../shared/messages";
 
 const OFFSCREEN_URL = "src/offscreen/offscreen.html";
+
+async function getMode(): Promise<Mode> {
+  const got = await chrome.storage.local.get(MODE_STORAGE_KEY);
+  const m = got[MODE_STORAGE_KEY];
+  return m === "light" ? "light" : DEFAULT_MODE;
+}
+
+async function setMode(mode: Mode): Promise<void> {
+  await chrome.storage.local.set({ [MODE_STORAGE_KEY]: mode });
+}
 
 async function ensureOffscreen(): Promise<void> {
   const exists = await chrome.offscreen.hasDocument?.();
@@ -75,11 +88,13 @@ async function startCapture(tabId: number, semitones: number): Promise<void> {
       },
     );
   });
+  const mode = await getMode();
   await sendToOffscreen({
     type: "START_CAPTURE",
     tabId,
     streamId,
     semitones,
+    mode,
   });
 }
 
@@ -163,6 +178,22 @@ chrome.runtime.onMessage.addListener(
           case "STOP": {
             await stopCapture(msg.tabId);
             sendResponse({ ok: true });
+            return;
+          }
+          case "GET_MODE": {
+            const mode = await getMode();
+            sendResponse({ ok: true, mode });
+            return;
+          }
+          case "SET_MODE": {
+            await setMode(msg.mode);
+            // If a capture is live, push the mode change into the worklet.
+            try {
+              await sendToOffscreen({ type: "SET_MODE", mode: msg.mode });
+            } catch {
+              // No offscreen yet — fine, mode applies on next capture start.
+            }
+            sendResponse({ ok: true, mode: msg.mode });
             return;
           }
           case "DRM_SUSPECTED": {
