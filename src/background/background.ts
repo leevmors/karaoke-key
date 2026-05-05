@@ -39,11 +39,16 @@ async function clearState(tabId: number): Promise<void> {
 }
 
 async function getActiveTabId(): Promise<number | undefined> {
-  const [tab] = await chrome.tabs.query({
+  // Service workers have no "currentWindow"; that query returns no tabs.
+  // Use lastFocusedWindow, which resolves to the user's foreground window.
+  const tabs = await chrome.tabs.query({
     active: true,
-    currentWindow: true,
+    lastFocusedWindow: true,
   });
-  return tab?.id;
+  if (tabs[0]?.id != null) return tabs[0].id;
+  // Fallback: any active tab in any normal window.
+  const any = await chrome.tabs.query({ active: true });
+  return any.find((t) => t.id != null && t.windowId != null)?.id;
 }
 
 async function sendToOffscreen(msg: BgToOffscreen): Promise<void> {

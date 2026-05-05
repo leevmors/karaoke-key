@@ -87,14 +87,28 @@ function showToast(text: string): void {
   }, 4000);
 }
 
+async function findActiveTabId(): Promise<number | undefined> {
+  // Popup context has a real associated window; this is reliable.
+  const [tab] = await chrome.tabs.query({
+    active: true,
+    currentWindow: true,
+  });
+  return tab?.id;
+}
+
 async function bootstrap(): Promise<void> {
   try {
-    const resp = await send({ type: "GET_STATE" });
-    if (!resp.ok || !resp.tabId) {
+    const tabId = await findActiveTabId();
+    if (tabId == null) {
       showToast("No active tab.");
       return;
     }
-    activeTabId = resp.tabId;
+    activeTabId = tabId;
+    const resp = await send({ type: "GET_STATE", tabId });
+    if (!resp.ok) {
+      showToast(resp.error ?? "Couldn't load state.");
+      return;
+    }
     render(resp.state?.semitones ?? 0, false);
     if (resp.state?.drmDetected) {
       showToast("This site uses DRM. Pitch shifting won't work here.");
